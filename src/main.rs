@@ -1,5 +1,6 @@
 pub mod game;
 pub mod board;
+pub mod validator;
 
 use salvo::prelude::*;
 use salvo::Handler;
@@ -9,11 +10,12 @@ use serde_json::json;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{sync_channel, SyncSender, Receiver};
 use std::thread;
+use std::fs;
+use std::env;
 use reqwest;
 
 use crate::game::Game;
-
-const PUBLIC_KEY: &str = "";
+use crate::validator::Validator;
 
 macro_rules! component {
     ($type:expr, $label:expr, $style:expr, $custom_id:expr) => {
@@ -130,31 +132,19 @@ impl Handler for InteractionHandler {
     }
 }
 
-#[fn_handler]
-async fn check_signature(req: &mut Request, res: &mut Response) {
-
-    let signature = req.header("X-Signature-Ed25519").unwrap_or(String::from(""));
-    let timestamp = req.header("X-Signature-Timestamp").unwrap_or(String::from(""));
-
-    match req.payload().await {
-        Ok(body) => {
-            if !verify(
-                &<Vec<u8>>::from_hex(signature).unwrap().as_slice(),
-                [timestamp.as_bytes(), body].concat().as_slice(),
-                &<Vec<u8>>::from_hex(PUBLIC_KEY).unwrap().as_slice(),
-            ).unwrap() {
-                res.set_status_error(StatusError::unauthorized());
-                return;
-            }
-        },
-        Err(_) => {
-            res.set_status_error(StatusError::bad_request());
-        }
-    }
-}
-
 #[tokio::main]
 async fn main() {
+
+    let pub_key = match env::var("TERRI_PUB_KEY") {
+        Ok(key) => key,
+        Err(_) => {
+            let config_raw = fs::read_to_string("config.toml").unwrap();
+            let config = config_raw.parse::<toml::Value>().unwrap();
+            config["pub_key"].as_str().unwrap().to_owned()
+        }
+    };
+
+    let validator = Validator::new(pub_key);
 
     let handler = InteractionHandler{
         state: Arc::new(Mutex::new(State {
@@ -164,7 +154,7 @@ async fn main() {
     };
 
     let router = Router::new()
-        .hoop(check_signature)
+        .hoop(validator)
         .post(handler);
 
     Server::new(TcpListener::bind("0.0.0.0:8000"))
