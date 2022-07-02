@@ -1,11 +1,10 @@
 pub mod game;
 pub mod board;
 pub mod validator;
+pub mod tetriminos;
 
 use salvo::prelude::*;
 use salvo::Handler;
-use nacl::sign::verify;
-use hex::FromHex;
 use serde_json::json;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{sync_channel, SyncSender, Receiver};
@@ -64,22 +63,30 @@ impl Handler for InteractionHandler {
                                     app_id = application_id,
                                     token = inter_token
                                 );
-                        let game = Game::new();
+                        let mut game = Game::new();
                         loop {
                             thread::sleep(std::time::Duration::from_secs(1));
                             let msg = rx.try_recv();
                             
                             match msg {
                                 Ok(msg) => {
-                                    println!("{}", msg);
-                                    if msg == -1 {
-                                        break;
+                                    match msg {
+                                        1 => {},
+                                        2 => {
+                                            game.get_board().move_block_left();
+                                        },
+                                        3 => {},
+                                        4 => {
+                                            game.get_board().move_block_right();
+                                        },
+                                        5 => {},
+                                        _ => {},
                                     }
                                 },
-                                Err(e) => {
-                                    println!("{}", e);
-                                }
+                                Err(_) => {}
                             }
+
+                            game.update();
             
                             match client.patch(&url).body(
                                     json!({
@@ -120,12 +127,12 @@ impl Handler for InteractionHandler {
                 res.render(Text::Json(json!({"type": 5}).to_string()));
             },
             3 => {
-                if state.current_player.as_ref().unwrap() == inter["member"]["user"]["id"].as_str().unwrap() {
+                if state.current_player.as_ref().unwrap_or(&String::from("")) == inter["member"]["user"]["id"].as_str().unwrap() {
                     let action = inter["data"]["custom_id"].as_str().unwrap().parse::<i32>().unwrap();
                     state.tx.as_ref().unwrap().send(action).unwrap();
-                } else {
-                    res.render(Text::Json(json!({"type": 6}).to_string()));
                 }
+                res.render(Text::Json(json!({"type": 6}).to_string()));
+                
             },
             _ => res.set_status_error(StatusError::bad_request())
     }
