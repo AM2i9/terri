@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 salvo = "0.25.1"
+reqwest = { version = "0.11", features = ["json", "blocking"] }
 tokio = { version = "1", features = ["macros"] }
 nacl = "0.5.3"
 hex = "0.4.3"
