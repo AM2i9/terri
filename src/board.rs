@@ -170,6 +170,26 @@ impl Board {
         self.settled_blocks[((self.width * y) + x) as usize].is_some()
     }
 
+    fn clear_row(&mut self, y: i32) {
+        for x in 0..self.width {
+            if self.settled_blocks[((self.width * y) + x) as usize].is_none() {
+                return;
+            }
+        }
+        println!("need to clear row");
+        for yi in (1..=y).rev() {
+            for x in 0..self.width {
+                self.settled_blocks[((self.width * yi) + x) as usize] = self.settled_blocks[((self.width * (yi - 1)) + x) as usize];
+            }
+        }
+    }
+
+    pub fn clear_rows(&mut self) {
+        for y in 0..self.height {
+            self.clear_row(y);
+        }
+    }
+
     pub fn draw(&self) -> String {
         let mut board = String::new();
         for y in 0..self.height {

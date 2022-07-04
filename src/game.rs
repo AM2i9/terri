@@ -29,5 +29,6 @@ impl Game {
             self.board.settle_blocks();
             self.board.new_active_blocks();
         }
+        self.board.clear_rows();
     }
 }
