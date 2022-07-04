@@ -174,7 +174,7 @@ async fn main() {
         .hoop(validator)
         .post(handler);
 
-    Server::new(TcpListener::bind("0.0.0.0:8000"))
+    Server::new(TcpListener::bind("0.0.0.0:80"))
         .serve(router)
         .await;
 }
