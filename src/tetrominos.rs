@@ -33,6 +33,20 @@ impl Distribution<TetrominoShape> for Standard {
     }
 }
 
+impl TetrominoShape {
+    pub fn color_str(&self) -> &'static str{
+        match *self {
+            TetrominoShape::I => "[0;36m",
+            TetrominoShape::O => "[0;33m",
+            TetrominoShape::T => "[1;35m",
+            TetrominoShape::S => "[0;32m",
+            TetrominoShape::Z => "[0;31m",
+            TetrominoShape::J => "[0;34m",
+            TetrominoShape::L => "[1;31m",
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Tetromino {
     pub shape: TetrominoShape,

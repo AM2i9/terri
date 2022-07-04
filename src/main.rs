@@ -109,11 +109,11 @@ impl Handler for InteractionHandler {
                                             {
                                                 "type": 1,
                                                 "components": [
-                                                    component!(2, "L", 1, "1"),
-                                                    component!(2, "ML", 1, "2"),
-                                                    component!(2, "D", 1, "3"),
-                                                    component!(2, "MR", 1, "4"),
-                                                    component!(2, "R", 1, "5"),
+                                                    component!(2, "↪️", 1, "1"),
+                                                    component!(2, "⬅️", 1, "2"),
+                                                    component!(2, "⏬", 1, "3"),
+                                                    component!(2, "➡️", 1, "4"),
+                                                    component!(2, "↩️", 1, "5"),
 
                                                 ]
                                             }

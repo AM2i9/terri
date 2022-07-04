@@ -8,7 +8,7 @@ pub struct Game {
 impl Game {
     pub fn new() -> Game {
         Game {
-            board: Board::new(12, 12),
+            board: Board::new(20, 10),
             down_counter: 0
         }
     }
@@ -19,7 +19,7 @@ impl Game {
 
     pub fn update(&mut self) {
         if !self.board.blocks_will_collide_down(){
-            if self.down_counter > 1 {
+            if self.down_counter > 0 {
                 self.board.edge_blocks_down();
                 self.down_counter = 0;
             } else {

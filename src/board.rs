@@ -165,6 +165,16 @@ impl Board {
 
         self.settled_block_at_coord(x, y)
     }
+    
+    fn shape_at_coord(&self, x: i32, y: i32) -> TetrominoShape {
+        for block in self.active_blocks.iter() {
+            if block[0] == x && block[1] == y {
+                return self.active_tetrmomino.shape;
+            }
+        }
+
+        return self.settled_blocks[((self.width * y) + x) as usize].unwrap();
+    }
 
     fn settled_block_at_coord(&self, x: i32, y: i32) -> bool {
         self.settled_blocks[((self.width * y) + x) as usize].is_some()
@@ -193,10 +203,12 @@ impl Board {
     pub fn draw(&self) -> String {
         let mut board = String::new();
         for y in 0..self.height {
+            println!("{}", y);
             for _ in 0..2 {
                 for x in 0..self.width {
                     if self.block_at_coord(x, y) {
-                        board.push_str("###");
+                        board.push_str(self.shape_at_coord(x, y).color_str());
+                        board.push_str("███");
                     } else {
                         board.push_str("   ");
                     }
