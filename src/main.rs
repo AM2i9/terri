@@ -71,7 +71,9 @@ impl Handler for InteractionHandler {
                             match msg {
                                 Ok(msg) => {
                                     match msg {
-                                        1 => {},
+                                        1 => {
+                                            game.get_board().rotate_blocks_cc();
+                                        },
                                         2 => {
                                             if !game.get_board().will_collide_left() {
                                                 game.get_board().move_blocks_left();
@@ -85,7 +87,9 @@ impl Handler for InteractionHandler {
                                                 game.get_board().move_blocks_right();
                                             }
                                         },
-                                        5 => {},
+                                        5 => {
+                                            game.get_board().rotate_blocks_cw();
+                                        },
                                         _ => {},
                                     }
                                 },

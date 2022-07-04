@@ -1,26 +1,32 @@
-use crate::tetrominos::{Block, Tetromino};
+use crate::tetrominos::{Tetromino, TetrominoShape};
 
 pub struct Board {
-    pub height: u32,
-    pub width: u32,
-    pub active_blocks: [[u32; 2]; 4],
-    pub settled_blocks: Box<[Option<Tetromino>]>,
+    pub height: i32,
+    pub width: i32,
+    pub active_tetrmomino: Tetromino,
+    pub active_blocks: [[i32; 2]; 4],
+    pub settled_blocks: Box<[Option<TetrominoShape>]>,
 }
 
 impl Board {
-    pub fn new(height: u32, width: u32) -> Board {
-        let first_blocks = Tetromino::random().blocks();
+    pub fn new(height: i32, width: i32) -> Board {
+        let first_mino = Tetromino::random();
+        let first_blocks = first_mino.blocks();
 
         let max_blocks = (height * width) as usize;
         
         let mut new_board = Board {
             height,
             width,
+            active_tetrmomino: first_mino,
             active_blocks: first_blocks,
             settled_blocks: vec![None; max_blocks].into_boxed_slice(),
         };
 
         let (start_x, start_y) = new_board.get_start_pos();
+
+        new_board.active_tetrmomino.x = start_x;
+        new_board.active_tetrmomino.y = start_y;
         
         for block in &mut new_board.active_blocks.iter_mut() {
             block[0] += start_x;
@@ -31,9 +37,14 @@ impl Board {
     }
 
     pub fn new_active_blocks(&mut self) {
-        self.active_blocks = Tetromino::random().blocks();
+        let new_mino = Tetromino::random();
+        self.active_blocks = new_mino.blocks();
+        self.active_tetrmomino = new_mino;
 
         let (start_x, start_y) = self.get_start_pos();
+
+        self.active_tetrmomino.x = start_x;
+        self.active_tetrmomino.y = start_y;
         
         for block in &mut self.active_blocks.iter_mut() {
             block[0] += start_x;
@@ -41,9 +52,53 @@ impl Board {
         }
     }
 
+    pub fn rotate_blocks_cw(&mut self) {
+        self.active_tetrmomino.rotate_cw();
+        let mut new_blocks = self.active_tetrmomino.blocks();
+
+        for block in new_blocks.iter_mut() {
+            if block[0] < 0 {
+                self.active_tetrmomino.x += 1;
+            } else if block[0] >= self.width {
+                self.active_tetrmomino.x -= 1;
+            }
+            if block[1] >= self.height {
+                self.active_tetrmomino.y -= 1;
+                block[1] -= block[1] - self.height;
+            } 
+            if self.settled_block_at_coord(block[0], block[1]) {
+                return;
+            }
+        }
+        
+        self.active_blocks = self.active_tetrmomino.blocks();
+    }
+
+    pub fn rotate_blocks_cc(&mut self) {
+        self.active_tetrmomino.rotate_cc();
+        let mut new_blocks = self.active_tetrmomino.blocks();
+
+        for block in new_blocks.iter_mut() {
+            if block[0] < 0 {
+                self.active_tetrmomino.x += 1;
+            } else if block[0] >= self.width {
+                self.active_tetrmomino.x -= 1;
+            }
+            if block[1] >= self.height {
+                self.active_tetrmomino.y -= 1;
+                block[1] -= block[1] - self.height;
+            } 
+            if self.settled_block_at_coord(block[0], block[1]) {
+                return;
+            }
+        }
+        
+        self.active_blocks = self.active_tetrmomino.blocks();
+    }
+
     pub fn settle_blocks(&mut self) {
         for block in &self.active_blocks {
-            self.settled_blocks[((self.width * block[1]) + block[0]) as usize] = Some(Tetromino::L);
+            self.settled_blocks[((self.width * block[1]) + block[0]) as usize] = Some(self.active_tetrmomino.shape);
         }
     }
     
@@ -51,6 +106,7 @@ impl Board {
         for block in &mut self.active_blocks.iter_mut() {
             block[1] += 1;
         }
+        self.active_tetrmomino.y += 1;
     }
 
     pub fn drop_blocks(&mut self) {
@@ -63,12 +119,14 @@ impl Board {
         for block in &mut self.active_blocks.iter_mut() {
             block[0] += 1;
         }
+        self.active_tetrmomino.x += 1;
     }
 
     pub fn move_blocks_left(&mut self) {
         for block in &mut self.active_blocks.iter_mut() {
             block[0] -= 1;
         }
+        self.active_tetrmomino.x -= 1;
     }
 
     pub fn blocks_will_collide_down(&self) -> bool{
@@ -98,7 +156,7 @@ impl Board {
         false
     }
 
-    fn block_at_coord(&self, x: u32, y: u32) -> bool {
+    fn block_at_coord(&self, x: i32, y: i32) -> bool {
         for block in self.active_blocks.iter() {
             if block[0] == x && block[1] == y {
                 return true;
@@ -108,7 +166,7 @@ impl Board {
         self.settled_block_at_coord(x, y)
     }
 
-    fn settled_block_at_coord(&self, x: u32, y: u32) -> bool {
+    fn settled_block_at_coord(&self, x: i32, y: i32) -> bool {
         self.settled_blocks[((self.width * y) + x) as usize].is_some()
     }
 
@@ -129,7 +187,7 @@ impl Board {
         board
     }
 
-    pub fn get_start_pos(&self) -> (u32, u32) {
+    pub fn get_start_pos(&self) -> (i32, i32) {
         ((self.width / 2 )- 1, 0)
     }
 }
