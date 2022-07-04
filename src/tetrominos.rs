@@ -1,4 +1,5 @@
-use rand::{distributions::{Distribution, Standard}, Rng,};
+use rand::{distributions::{Distribution, Standard}, Rng};
+use rand::seq::SliceRandom;
 
 #[derive(Debug)]
 pub enum RotationState {
@@ -17,6 +18,41 @@ pub enum TetrominoShape {
     Z,
     J,
     L,
+}
+
+pub struct Bag {
+    bag: [TetrominoShape; 7],
+    i: usize
+}
+
+impl Bag {
+    pub fn new() -> Bag {
+        let bag = Bag {
+            bag: [
+                TetrominoShape::I,
+                TetrominoShape::O,
+                TetrominoShape::T,
+                TetrominoShape::S,
+                TetrominoShape::Z,
+                TetrominoShape::J,
+                TetrominoShape::L],
+            i: 7
+        };
+        bag
+    }
+}
+
+impl Iterator for Bag {
+    type Item = TetrominoShape;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i >= 7 {
+            self.bag.shuffle(&mut rand::thread_rng());
+            self.i = 0;
+        }
+        let item = self.bag[self.i];
+        self.i += 1;
+        Some(item)
+    }
 }
 
 impl Distribution<TetrominoShape> for Standard {
@@ -57,18 +93,10 @@ pub struct Tetromino {
 
 
 impl Tetromino {
+
     pub fn with_shape(shape: TetrominoShape) -> Tetromino {
         Tetromino {
             shape: shape,
-            rotation_state: RotationState::A,
-            x: 0,
-            y: 0,
-        }
-    }
-
-    pub fn random() -> Tetromino {
-        Tetromino {
-            shape: rand::random::<TetrominoShape>(),
             rotation_state: RotationState::A,
             x: 0,
             y: 0,

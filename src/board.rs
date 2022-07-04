@@ -1,4 +1,4 @@
-use crate::tetrominos::{Tetromino, TetrominoShape};
+use crate::tetrominos::{Tetromino, TetrominoShape, Bag};
 
 pub struct Board {
     pub height: i32,
@@ -6,11 +6,13 @@ pub struct Board {
     pub active_tetrmomino: Tetromino,
     pub active_blocks: [[i32; 2]; 4],
     pub settled_blocks: Box<[Option<TetrominoShape>]>,
+    pub bag: Bag
 }
 
 impl Board {
     pub fn new(height: i32, width: i32) -> Board {
-        let first_mino = Tetromino::random();
+        let mut bag = Bag::new();
+        let first_mino = Tetromino::with_shape(bag.next().unwrap());
         let first_blocks = first_mino.blocks();
 
         let max_blocks = (height * width) as usize;
@@ -21,6 +23,7 @@ impl Board {
             active_tetrmomino: first_mino,
             active_blocks: first_blocks,
             settled_blocks: vec![None; max_blocks].into_boxed_slice(),
+            bag: bag
         };
 
         let (start_x, start_y) = new_board.get_start_pos();
@@ -37,7 +40,7 @@ impl Board {
     }
 
     pub fn new_active_blocks(&mut self) {
-        let new_mino = Tetromino::random();
+        let new_mino = Tetromino::with_shape(self.bag.next().unwrap());
         self.active_blocks = new_mino.blocks();
         self.active_tetrmomino = new_mino;
 
@@ -186,7 +189,6 @@ impl Board {
                 return;
             }
         }
-        println!("need to clear row");
         for yi in (1..=y).rev() {
             for x in 0..self.width {
                 self.settled_blocks[((self.width * yi) + x) as usize] = self.settled_blocks[((self.width * (yi - 1)) + x) as usize];
@@ -203,7 +205,6 @@ impl Board {
     pub fn draw(&self) -> String {
         let mut board = String::new();
         for y in 0..self.height {
-            println!("{}", y);
             for _ in 0..2 {
                 for x in 0..self.width {
                     if self.block_at_coord(x, y) {
