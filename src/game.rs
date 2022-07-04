@@ -18,11 +18,16 @@ impl Game {
     }
 
     pub fn update(&mut self) {
-        if self.down_counter > 2 {
-            self.board.edge_blocks_down();
-            self.down_counter = 0;
+        if !self.board.blocks_will_collide_down(){
+            if self.down_counter == 0 {
+                self.board.edge_blocks_down();
+                self.down_counter = 0;
+            } else {
+                self.down_counter += 1;
+            }
         } else {
-            self.down_counter += 1;
+            self.board.settle_blocks();
+            self.board.new_active_blocks();
         }
     }
 }

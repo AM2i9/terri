@@ -1,7 +1,7 @@
 pub mod game;
 pub mod board;
 pub mod validator;
-pub mod tetriminos;
+pub mod tetrominos;
 
 use salvo::prelude::*;
 use salvo::Handler;
@@ -73,11 +73,17 @@ impl Handler for InteractionHandler {
                                     match msg {
                                         1 => {},
                                         2 => {
-                                            game.get_board().move_block_left();
+                                            if !game.get_board().will_collide_left() {
+                                                game.get_board().move_blocks_left();
+                                            }
                                         },
-                                        3 => {},
+                                        3 => {
+                                            game.get_board().drop_blocks();
+                                        },
                                         4 => {
-                                            game.get_board().move_block_right();
+                                            if !game.get_board().will_collide_right() {
+                                                game.get_board().move_blocks_right();
+                                            }
                                         },
                                         5 => {},
                                         _ => {},
