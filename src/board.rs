@@ -9,7 +9,7 @@ pub struct Board {
 
 impl Board {
     pub fn new(height: u32, width: u32) -> Board {
-        let first_blocks = Tetromino::L.blocks();
+        let first_blocks = Tetromino::random().blocks();
 
         let max_blocks = (height * width) as usize;
         
@@ -31,7 +31,7 @@ impl Board {
     }
 
     pub fn new_active_blocks(&mut self) {
-        self.active_blocks = Tetromino::L.blocks();
+        self.active_blocks = Tetromino::random().blocks();
 
         let (start_x, start_y) = self.get_start_pos();
         

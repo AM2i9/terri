@@ -1,3 +1,5 @@
+use rand::{distributions::{Distribution, Standard}, Rng,};
+
 #[derive(Debug)]
 pub struct Block {
     pub x: u32,
@@ -15,7 +17,26 @@ pub enum Tetromino {
     L,
 }
 
+impl Distribution<Tetromino> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tetromino {
+        match rng.gen_range(0..6) {
+            0 => Tetromino::I,
+            1 => Tetromino::O,
+            2 => Tetromino::T,
+            3 => Tetromino::S,
+            4 => Tetromino::Z,
+            5 => Tetromino::J,
+            _ => Tetromino::L,
+        }
+    }
+}
+
+
 impl Tetromino {
+    pub fn random() -> Tetromino {
+        rand::random()
+    }
+
     pub fn blocks(&self) -> [[u32; 2]; 4] {
         match *self {
             Tetromino::I => {
