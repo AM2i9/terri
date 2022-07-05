@@ -11,6 +11,7 @@ use std::sync::mpsc::{sync_channel, SyncSender, Receiver};
 use std::thread;
 use std::fs;
 use std::env;
+use std::collections::HashMap;
 use reqwest;
 
 use crate::game::Game;
@@ -28,12 +29,11 @@ macro_rules! component {
 }
 
 pub struct State {
-    pub tx: Option<SyncSender<i32>>,
-    pub current_player: Option<String>
+    pub players: HashMap<String, SyncSender<i32>>,
 }
 
 pub struct InteractionHandler {
-    pub state: Arc<Mutex<State>> 
+    pub state: Arc<Mutex<State>>
 }
 
 #[async_trait]
@@ -46,16 +46,19 @@ impl Handler for InteractionHandler {
         match inter["type"].as_u64().unwrap() {
             1 => res.render(Text::Json(json!({"type": 1}).to_string())),
             2 => {
-                if state.tx.is_none() {
-                    let (tx, rx): (SyncSender<i32>, Receiver<i32>) = sync_channel(1);
 
-                    state.tx.insert(tx);
+                let player = inter["member"]["user"]["id"].as_str().unwrap().to_owned();
+
+                if !state.players.contains_key(player.as_str()) {
+
+                    let (tx, rx): (SyncSender<i32>, Receiver<i32>) = sync_channel(1);
         
                     let inter_token = inter["token"].as_str().unwrap().to_owned();
                     let application_id = inter["application_id"].as_str().unwrap().to_owned();
 
-                    let player = inter["member"]["user"]["id"].as_str().unwrap().to_owned();
-                    state.current_player.insert(player);
+                    let debug_player = player.clone();
+
+                    state.players.insert(player, tx);
             
                     thread::spawn(move || {
                         let client = reqwest::blocking::Client::new();
@@ -65,7 +68,7 @@ impl Handler for InteractionHandler {
                                 );
                         let mut game = Game::new();
                         loop {
-                            thread::sleep(std::time::Duration::from_secs(1));
+                            thread::sleep(std::time::Duration::from_millis(800));
                             let msg = rx.try_recv();
                             
                             match msg {
@@ -121,7 +124,9 @@ impl Handler for InteractionHandler {
                                     }).to_string()
                                 ).header("Content-Type", "application/json").send()
                             {
-                                Ok(_) => {},
+                                Ok(res) => {
+                                    println!("{}, {:?}", debug_player, res.headers().get("x-ratelimit-remaining"));
+                                },
                                 Err(e) => {
                                     println!("{}", e);
                                 }
@@ -129,17 +134,16 @@ impl Handler for InteractionHandler {
                         }
                     });
                 } else {
-                    println!("test");
-                    res.render(Text::Json(json!({"type": 4, "data": {"content": "Sorry, I can only play one game at a time right now (due to rate limits) :)", "flags": 64}}).to_string()));
+                    res.render(Text::Json(json!({"type": 4, "data": {"content": "Hey! You're already playing!", "flags": 64}}).to_string()));
                     return;
                 }
         
                 res.render(Text::Json(json!({"type": 5}).to_string()));
             },
             3 => {
-                if state.current_player.as_ref().unwrap_or(&String::from("")) == inter["member"]["user"]["id"].as_str().unwrap() {
+                if state.players.contains_key(inter["member"]["user"]["id"].as_str().unwrap()){
                     let action = inter["data"]["custom_id"].as_str().unwrap().parse::<i32>().unwrap();
-                    state.tx.as_ref().unwrap().send(action).unwrap();
+                    state.players.get(inter["member"]["user"]["id"].as_str().unwrap()).unwrap().send(action).unwrap();
                 }
                 res.render(Text::Json(json!({"type": 6}).to_string()));
                 
@@ -165,8 +169,7 @@ async fn main() {
 
     let handler = InteractionHandler{
         state: Arc::new(Mutex::new(State {
-            tx: None,
-            current_player: None
+            players: HashMap::new()
         }))
     };
 
@@ -174,7 +177,7 @@ async fn main() {
         .hoop(validator)
         .post(handler);
 
-    Server::new(TcpListener::bind("0.0.0.0:80"))
+    Server::new(TcpListener::bind("0.0.0.0:8000"))
         .serve(router)
         .await;
 }
